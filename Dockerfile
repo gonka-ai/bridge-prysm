@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS prysm-builder
+FROM golang:1.25-alpine AS prysm-builder
 
 # Install required packages
 RUN apk add --no-cache make gcc musl-dev linux-headers git g++ build-base cmake

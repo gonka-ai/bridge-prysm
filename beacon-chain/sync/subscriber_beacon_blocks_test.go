@@ -170,11 +170,22 @@ func TestProcessSidecarsFromExecutionFromBlock(t *testing.T) {
 		tests := []struct {
 			name              string
 			blobSidecars      []blocks.VerifiedROBlob
+			err               error
 			expectedBlobCount int
 		}{
 			{
 				name:              "Constructed 0 blobs",
 				blobSidecars:      nil,
+				expectedBlobCount: 0,
+			},
+			{
+				name:              "Skip blobs when execution method is unavailable",
+				err:               execution.ErrMethodNotFound,
+				expectedBlobCount: 0,
+			},
+			{
+				name:              "Skip blobs when execution fork is unsupported",
+				err:               execution.ErrUnsupportedFork,
 				expectedBlobCount: 0,
 			},
 			{
@@ -195,7 +206,8 @@ func TestProcessSidecarsFromExecutionFromBlock(t *testing.T) {
 						clock:       startup.NewClock(time.Now(), [32]byte{}),
 						blobStorage: filesystem.NewEphemeralBlobStorage(t),
 						executionReconstructor: &mockExecution.EngineClient{
-							BlobSidecars: tt.blobSidecars,
+							BlobSidecars:      tt.blobSidecars,
+							ErrorBlobSidecars: tt.err,
 						},
 						operationNotifier: &chainMock.MockOperationNotifier{},
 					},
@@ -250,6 +262,7 @@ func TestProcessSidecarsFromExecutionFromBlock(t *testing.T) {
 		tests := []struct {
 			name                    string
 			dataColumnSidecars      []blocks.VerifiedRODataColumn
+			err                     error
 			blobCount               int
 			expectedDataColumnCount int
 		}{
@@ -257,6 +270,18 @@ func TestProcessSidecarsFromExecutionFromBlock(t *testing.T) {
 				name:                    "Constructed 0 data columns with no blobs",
 				blobCount:               0,
 				dataColumnSidecars:      nil,
+				expectedDataColumnCount: 0,
+			},
+			{
+				name:                    "Skip data columns when execution method is unavailable",
+				blobCount:               1,
+				err:                     execution.ErrMethodNotFound,
+				expectedDataColumnCount: 0,
+			},
+			{
+				name:                    "Skip data columns when execution fork is unsupported",
+				blobCount:               1,
+				err:                     execution.ErrUnsupportedFork,
 				expectedDataColumnCount: 0,
 			},
 			{
@@ -276,7 +301,8 @@ func TestProcessSidecarsFromExecutionFromBlock(t *testing.T) {
 						clock:             startup.NewClock(time.Now(), [32]byte{}),
 						dataColumnStorage: filesystem.NewEphemeralDataColumnStorage(t),
 						executionReconstructor: &mockExecution.EngineClient{
-							DataColumnSidecars: tt.dataColumnSidecars,
+							DataColumnSidecars:      tt.dataColumnSidecars,
+							ErrorDataColumnSidecars: tt.err,
 						},
 						operationNotifier: &chainMock.MockOperationNotifier{},
 					},

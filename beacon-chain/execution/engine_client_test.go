@@ -2442,7 +2442,7 @@ func TestReconstructBlobSidecars(t *testing.T) {
 	t.Run("get-blobs end point is not supported", func(t *testing.T) {
 		hi := mockSummary(t, []bool{true, true, true, true, true, false})
 		verifiedBlobs, err := client.ReconstructBlobSidecars(ctx, sb, r, hi)
-		require.ErrorContains(t, "engine_getBlobsV1 is not supported", err)
+		require.ErrorIs(t, err, ErrMethodNotFound)
 		require.Equal(t, 0, len(verifiedBlobs))
 	})
 
@@ -2525,7 +2525,7 @@ func TestConstructDataColumnSidecars(t *testing.T) {
 
 	t.Run("GetBlobsV2 is not supported", func(t *testing.T) {
 		_, _, err := client.ConstructDataColumnSidecars(ctx, peerdas.PopulateFromBlock(roBlock))
-		require.ErrorContains(t, "engine_getBlobsV2 is not supported", err)
+		require.ErrorIs(t, err, ErrMethodNotFound)
 	})
 
 	t.Run("nothing received", func(t *testing.T) {

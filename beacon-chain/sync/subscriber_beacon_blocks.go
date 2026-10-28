@@ -10,6 +10,7 @@ import (
 	"github.com/OffchainLabs/go-bitfield"
 	"github.com/OffchainLabs/prysm/v7/beacon-chain/blockchain"
 	"github.com/OffchainLabs/prysm/v7/beacon-chain/core/peerdas"
+	"github.com/OffchainLabs/prysm/v7/beacon-chain/execution"
 	"github.com/OffchainLabs/prysm/v7/beacon-chain/p2p"
 	"github.com/OffchainLabs/prysm/v7/config/features"
 	fieldparams "github.com/OffchainLabs/prysm/v7/config/fieldparams"
@@ -161,6 +162,10 @@ func (s *Service) processBlobSidecarsFromExecution(ctx context.Context, block in
 	// Reconstruct blob sidecars from the EL
 	blobSidecars, err := s.cfg.executionReconstructor.ReconstructBlobSidecars(ctx, block, blockRoot, summary.HasIndex)
 	if err != nil {
+		if isUnavailableSidecarReconstructionErr(err) {
+			log.WithError(err).Debug("Skipping blob sidecar reconstruction from execution")
+			return
+		}
 		log.WithError(err).Error("Failed to reconstruct blob sidecars")
 		return
 	}
@@ -273,6 +278,10 @@ func (s *Service) processDataColumnSidecarsFromExecution(ctx context.Context, so
 			// Try to reconstruct data column constructedSidecars from the execution client.
 			constructedSidecars, partialColumns, err := s.cfg.executionReconstructor.ConstructDataColumnSidecars(ctx, source)
 			if err != nil {
+				if isUnavailableSidecarReconstructionErr(err) {
+					log.WithError(err).Debug("Skipping data column sidecar reconstruction from execution")
+					return nil, nil
+				}
 				return nil, errors.Wrap(err, "reconstruct data column sidecars")
 			}
 
@@ -351,6 +360,10 @@ func (s *Service) processDataColumnSidecarsFromExecution(ctx context.Context, so
 	}
 
 	return nil
+}
+
+func isUnavailableSidecarReconstructionErr(err error) bool {
+	return errors.Is(err, execution.ErrMethodNotFound) || errors.Is(err, execution.ErrUnsupportedFork)
 }
 
 func emptyPartialColumnsRequestingAll(source peerdas.ConstructionPopulator, commitmentCount int) ([]blocks.PartialDataColumn, error) {

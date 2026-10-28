@@ -421,7 +421,7 @@ func (s *Service) GetBlobs(ctx context.Context, versionedHashes []common.Hash) (
 
 	// If the execution engine does not support `GetBlobsV1`, return early to prevent encountering an error later.
 	if !s.capabilityCache.has(GetBlobsV1) {
-		return nil, errors.New(fmt.Sprintf("%s is not supported", GetBlobsV1))
+		return nil, ErrMethodNotFound
 	}
 
 	result := make([]*pb.BlobAndProof, len(versionedHashes))
@@ -436,7 +436,7 @@ func (s *Service) GetBlobsV2(ctx context.Context, versionedHashes []common.Hash)
 	start := time.Now()
 
 	if !s.capabilityCache.has(GetBlobsV2) {
-		return nil, errors.New(fmt.Sprintf("%s is not supported", GetBlobsV2))
+		return nil, ErrMethodNotFound
 	}
 
 	if flags.Get().DisableGetBlobsV2 {
